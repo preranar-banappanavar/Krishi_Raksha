@@ -149,21 +149,4 @@ KrishiRaksha aims to:
 - Improve climate resilience  
 - Strengthen rural decision-making
 
----
 
-## 🤝 Contributing
-Contributions, ideas, and feedback are welcome.
-
-```bash
-git clone https://github.com/yourusername/krishi-raksha.git
-```
-
----
-
-## 📜 License
-MIT License
-
----
-
-## 🌱 Tagline
-**KrishiRaksha — Protecting Farmers Before Crisis Strikes**

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "695488149221",
+    "project_id": "krishiraksha-642b6",
+    "storage_bucket": "krishiraksha-642b6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:695488149221:android:9ce977cf60c63a75bec60c",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDa6CrSi8Bsj6Ukb3vWB5pudavuor55AxY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

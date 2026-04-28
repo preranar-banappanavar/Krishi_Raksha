@@ -7,9 +7,15 @@ import 'features/market_alerts/market_alerts_screen.dart';
 import 'features/climate_advisory/climate_advisory_screen.dart';
 import 'features/post_harvest/post_harvest_screen.dart';
 import 'features/ai_copilot/ai_copilot_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase init failed: $e");
+  }
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,

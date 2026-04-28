@@ -1,6 +1,7 @@
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'models.dart';
 import 'app_config.dart';
-
 /// Async data service. When a real backend is available, replace the method
 /// bodies with HTTP calls. Any uncaught exception falls back to the built-in
 /// mock data so the app always shows something useful.
@@ -78,13 +79,22 @@ class FarmDataService {
       return const ServiceResult.failure('ERR_500', 'Internal server error');
     }
     try {
-      await Future.delayed(AppConfig.mockFetchDelay);
-      // ── Replace this block with a real HTTP call ──
-      return const ServiceResult.success(_mockDashboard);
-      // ─────────────────────────────────────────────
+      final result = await FirebaseFunctions.instance.httpsCallable('getDashboardData').call();
+      // Assume the data returned directly maps to DashboardData. 
+      // If enum strings are used, we might need to parse. For now, fallback to mock on parse error.
+      try {
+        final data = result.data;
+        return ServiceResult.success(DashboardData(
+          farmerName: data['farmerName'],
+          location: data['location'],
+          crisisLevel: CrisisLevel.values.firstWhere((e) => e.name == data['crisisLevel'], orElse: () => CrisisLevel.medium),
+        ));
+      } catch (parseError) {
+        debugPrint("Parse error: $parseError");
+        return const ServiceResult.success(_mockDashboard);
+      }
     } catch (e) {
-      // Backend unreachable — serve cached/mock data so the farmer still
-      // sees useful information.
+      debugPrint("Function error: $e");
       return const ServiceResult.success(_mockDashboard);
     }
   }
@@ -94,11 +104,25 @@ class FarmDataService {
       return const ServiceResult.failure('ERR_503', 'Market data service unavailable');
     }
     try {
-      await Future.delayed(AppConfig.mockFetchDelay);
-      // ── Replace this block with a real HTTP call ──
-      return ServiceResult.success(_mockMarket);
-      // ─────────────────────────────────────────────
+      final result = await FirebaseFunctions.instance.httpsCallable('getMarketData').call();
+      // Map data. We use _mockMarket as fallback if mapping fails.
+      try {
+        final data = result.data;
+        final crops = (data['crops'] as List).map((c) => CropPrice(
+          name: c['name'], emoji: c['emoji'], price: (c['price'] as num).toDouble(),
+          changePercent: (c['changePercent'] as num).toDouble(), badge: c['badge'], unit: c['unit'],
+          weeklyData: (c['weeklyData'] as List).map((w) => (w as num).toDouble()).toList()
+        )).toList();
+        final mandis = (data['mandis'] as List).map((m) => MandiInfo(
+          name: m['name'], distance: m['distance'], contact: m['contact']
+        )).toList();
+        return ServiceResult.success(MarketData(crops: crops, mandis: mandis));
+      } catch (parseError) {
+        debugPrint("Parse error: $parseError");
+        return ServiceResult.success(_mockMarket);
+      }
     } catch (e) {
+      debugPrint("Function error: $e");
       return ServiceResult.success(_mockMarket);
     }
   }
@@ -108,11 +132,27 @@ class FarmDataService {
       return const ServiceResult.failure('ERR_504', 'Weather service timeout');
     }
     try {
-      await Future.delayed(AppConfig.mockFetchDelay);
-      // ── Replace this block with a real HTTP call ──
-      return const ServiceResult.success(_mockClimate);
-      // ─────────────────────────────────────────────
+      final result = await FirebaseFunctions.instance.httpsCallable('getClimateData').call();
+      try {
+        final data = result.data;
+        final forecast = (data['forecast'] as List).map((f) => WeatherDay(
+          day: f['day'],
+          condition: WeatherCondition.values.firstWhere((e) => e.name == f['condition'], orElse: () => WeatherCondition.sunny),
+          tempCelsius: f['tempCelsius'],
+          rainPercent: f['rainPercent'],
+        )).toList();
+        final reg = data['regional'];
+        final regional = RegionalDetails(
+          humidityPercent: reg['humidityPercent'], windKmh: reg['windKmh'],
+          uvIndex: reg['uvIndex'], soilTempCelsius: reg['soilTempCelsius'],
+        );
+        return ServiceResult.success(ClimateData(forecast: forecast, regional: regional));
+      } catch (parseError) {
+        debugPrint("Parse error: $parseError");
+        return const ServiceResult.success(_mockClimate);
+      }
     } catch (e) {
+      debugPrint("Function error: $e");
       return const ServiceResult.success(_mockClimate);
     }
   }
@@ -122,11 +162,25 @@ class FarmDataService {
       return const ServiceResult.failure('ERR_503', 'Post-harvest service unavailable');
     }
     try {
-      await Future.delayed(AppConfig.mockFetchDelay);
-      // ── Replace this block with a real HTTP call ──
-      return const ServiceResult.success(_mockPostHarvest);
-      // ─────────────────────────────────────────────
+      final result = await FirebaseFunctions.instance.httpsCallable('getPostHarvestData').call();
+      try {
+        final data = result.data;
+        final tips = (data['tips'] as List).map((t) => StorageTip(
+          crop: t['crop'], emoji: t['emoji'],
+          risk: RiskLevel.values.firstWhere((e) => e.name == t['risk'], orElse: () => RiskLevel.medium),
+          tip: t['tip'],
+        )).toList();
+        return ServiceResult.success(PostHarvestData(
+          spoilageRisk: (data['spoilageRisk'] as num).toDouble(),
+          currentHumidityPercent: data['currentHumidityPercent'],
+          tips: tips,
+        ));
+      } catch (parseError) {
+        debugPrint("Parse error: $parseError");
+        return const ServiceResult.success(_mockPostHarvest);
+      }
     } catch (e) {
+      debugPrint("Function error: $e");
       return const ServiceResult.success(_mockPostHarvest);
     }
   }
